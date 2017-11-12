@@ -84,6 +84,8 @@ func doMount(args *argContainer) int {
 			}
 		}()
 	}
+	// Check if we are running on top of NFS and warn the user
+	checkSharedStorage(args)
 	// Get master key (may prompt for the password)
 	var masterkey []byte
 	var confFile *configfile.ConfFile
@@ -154,6 +156,33 @@ func doMount(args *argContainer) int {
 	// Jump into server loop. Returns when it gets an umount request from the kernel.
 	srv.Serve()
 	return 0
+}
+
+func checkSharedStorage(args *argContainer) {
+	const (
+		NFS_SUPER_MAGIC   = 0x6969
+		SMB_SUPER_MAGIC   = 0x517b
+		CIFS_MAGIC_NUMBER = 0xff534d42
+	)
+	if args.sharedstorage {
+		return
+	}
+	if args.reverse {
+		// Reverse mode always disables inode tracking
+		return
+	}
+	var st syscall.Statfs_t
+	err := syscall.Statfs(args.cipherdir, &st)
+	if err != nil {
+		tlog.Warn.Printf("checkSharedStorage: %v", err)
+		return
+	}
+	t := st.Type
+	if t == NFS_SUPER_MAGIC || t == SMB_SUPER_MAGIC || t == CIFS_MAGIC_NUMBER {
+		tlog.Info.Printf(tlog.ColorYellow +
+			"Note: It looks like you are mounting a network share. Consider using \"-sharedstorage\"." +
+			tlog.ColorReset)
+	}
 }
 
 // setOpenFileLimit tries to increase the open file limit to 4096 (the default hard
