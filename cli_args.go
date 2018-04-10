@@ -37,8 +37,6 @@ type argContainer struct {
 	_forceOwner *fuse.Owner
 }
 
-var flagSet *flag.FlagSet
-
 // prefixOArgs transform options passed via "-o foo,bar" into regular options
 // like "-foo -bar" and prefixes them to the command line.
 // Testcases in TestPrefixOArgs().
@@ -90,75 +88,81 @@ func prefixOArgs(osArgs []string) []string {
 	return newArgs
 }
 
+var args argContainer
+
 // parseCliOpts - parse command line options (i.e. arguments that start with "-")
-func parseCliOpts() (args argContainer) {
+func init() {
 	os.Args = prefixOArgs(os.Args)
 
 	var err error
 	var opensslAuto string
 
-	flagSet = flag.NewFlagSet(tlog.ProgramName, flag.ContinueOnError)
-	flagSet.Usage = helpShort
-	flagSet.BoolVar(&args.debug, "d", false, "")
-	flagSet.BoolVar(&args.debug, "debug", false, "Enable debug output")
-	flagSet.BoolVar(&args.fusedebug, "fusedebug", false, "Enable fuse library debug output")
-	flagSet.BoolVar(&args.init, "init", false, "Initialize encrypted directory")
-	flagSet.BoolVar(&args.zerokey, "zerokey", false, "Use all-zero dummy master key")
+	// Set our name to "gocryptfs", independent of the path we were called
+	// from, and don't kill the app if there is a parse error. We check
+	// the return code from flag.CommandLine.Parse().
+	flag.CommandLine.Init(tlog.ProgramName, flag.ContinueOnError)
+	flag.Usage = helpShort
+
+	flag.BoolVar(&args.debug, "d", false, "")
+	flag.BoolVar(&args.debug, "debug", false, "Enable debug output")
+	flag.BoolVar(&args.fusedebug, "fusedebug", false, "Enable fuse library debug output")
+	flag.BoolVar(&args.init, "init", false, "Initialize encrypted directory")
+	flag.BoolVar(&args.zerokey, "zerokey", false, "Use all-zero dummy master key")
 	// Tri-state true/false/auto
-	flagSet.StringVar(&opensslAuto, "openssl", "auto", "Use OpenSSL instead of built-in Go crypto")
-	flagSet.BoolVar(&args.passwd, "passwd", false, "Change password")
-	flagSet.BoolVar(&args.fg, "f", false, "")
-	flagSet.BoolVar(&args.fg, "fg", false, "Stay in the foreground")
-	flagSet.BoolVar(&args.version, "version", false, "Print version and exit")
-	flagSet.BoolVar(&args.plaintextnames, "plaintextnames", false, "Do not encrypt file names")
-	flagSet.BoolVar(&args.quiet, "q", false, "")
-	flagSet.BoolVar(&args.quiet, "quiet", false, "Quiet - silence informational messages")
-	flagSet.BoolVar(&args.nosyslog, "nosyslog", false, "Do not redirect output to syslog when running in the background")
-	flagSet.BoolVar(&args.wpanic, "wpanic", false, "When encountering a warning, panic and exit immediately")
-	flagSet.BoolVar(&args.longnames, "longnames", true, "Store names longer than 176 bytes in extra files")
-	flagSet.BoolVar(&args.allow_other, "allow_other", false, "Allow other users to access the filesystem. "+
+	flag.StringVar(&opensslAuto, "openssl", "auto", "Use OpenSSL instead of built-in Go crypto")
+	flag.BoolVar(&args.passwd, "passwd", false, "Change password")
+	flag.BoolVar(&args.fg, "f", false, "")
+	flag.BoolVar(&args.fg, "fg", false, "Stay in the foreground")
+	flag.BoolVar(&args.version, "version", false, "Print version and exit")
+	flag.BoolVar(&args.plaintextnames, "plaintextnames", false, "Do not encrypt file names")
+	flag.BoolVar(&args.quiet, "q", false, "")
+	flag.BoolVar(&args.quiet, "quiet", false, "Quiet - silence informational messages")
+	flag.BoolVar(&args.nosyslog, "nosyslog", false, "Do not redirect output to syslog when running in the background")
+	flag.BoolVar(&args.wpanic, "wpanic", false, "When encountering a warning, panic and exit immediately")
+	flag.BoolVar(&args.longnames, "longnames", true, "Store names longer than 176 bytes in extra files")
+	flag.BoolVar(&args.allow_other, "allow_other", false, "Allow other users to access the filesystem. "+
 		"Only works if user_allow_other is set in /etc/fuse.conf.")
-	flagSet.BoolVar(&args.ro, "ro", false, "Mount the filesystem read-only")
-	flagSet.BoolVar(&args.reverse, "reverse", false, "Reverse mode")
-	flagSet.BoolVar(&args.aessiv, "aessiv", false, "AES-SIV encryption")
-	flagSet.BoolVar(&args.nonempty, "nonempty", false, "Allow mounting over non-empty directories")
-	flagSet.BoolVar(&args.raw64, "raw64", true, "Use unpadded base64 for file names")
-	flagSet.BoolVar(&args.noprealloc, "noprealloc", false, "Disable preallocation before writing")
-	flagSet.BoolVar(&args.speed, "speed", false, "Run crypto speed test")
-	flagSet.BoolVar(&args.hkdf, "hkdf", true, "Use HKDF as an additional key derivation step")
-	flagSet.BoolVar(&args.serialize_reads, "serialize_reads", false, "Try to serialize read operations")
-	flagSet.BoolVar(&args.forcedecode, "forcedecode", false, "Force decode of files even if integrity check fails."+
+	flag.BoolVar(&args.ro, "ro", false, "Mount the filesystem read-only")
+	flag.BoolVar(&args.reverse, "reverse", false, "Reverse mode")
+	flag.BoolVar(&args.aessiv, "aessiv", false, "AES-SIV encryption")
+	flag.BoolVar(&args.nonempty, "nonempty", false, "Allow mounting over non-empty directories")
+	flag.BoolVar(&args.raw64, "raw64", true, "Use unpadded base64 for file names")
+	flag.BoolVar(&args.noprealloc, "noprealloc", false, "Disable preallocation before writing")
+	flag.BoolVar(&args.speed, "speed", false, "Run crypto speed test")
+	flag.BoolVar(&args.hkdf, "hkdf", true, "Use HKDF as an additional key derivation step")
+	flag.BoolVar(&args.serialize_reads, "serialize_reads", false, "Try to serialize read operations")
+	flag.BoolVar(&args.forcedecode, "forcedecode", false, "Force decode of files even if integrity check fails."+
 		" Requires gocryptfs to be compiled with openssl support and implies -openssl true")
-	flagSet.BoolVar(&args.hh, "hh", false, "Show this long help text")
-	flagSet.BoolVar(&args.info, "info", false, "Display information about CIPHERDIR")
-	flagSet.BoolVar(&args.sharedstorage, "sharedstorage", false, "Make concurrent access to a shared CIPHERDIR safer")
-	flagSet.BoolVar(&args.devrandom, "devrandom", false, "Use /dev/random for generating master key")
-	flagSet.BoolVar(&args.fsck, "fsck", false, "Run a filesystem check on CIPHERDIR")
-	flagSet.StringVar(&args.masterkey, "masterkey", "", "Mount with explicit master key")
-	flagSet.StringVar(&args.cpuprofile, "cpuprofile", "", "Write cpu profile to specified file")
-	flagSet.StringVar(&args.memprofile, "memprofile", "", "Write memory profile to specified file")
-	flagSet.StringVar(&args.config, "config", "", "Use specified config file instead of CIPHERDIR/gocryptfs.conf")
-	flagSet.StringVar(&args.extpass, "extpass", "", "Use external program for the password prompt")
-	flagSet.StringVar(&args.passfile, "passfile", "", "Read password from file")
-	flagSet.StringVar(&args.ko, "ko", "", "Pass additional options directly to the kernel, comma-separated list")
-	flagSet.StringVar(&args.ctlsock, "ctlsock", "", "Create control socket at specified path")
-	flagSet.StringVar(&args.fsname, "fsname", "", "Override the filesystem name")
-	flagSet.StringVar(&args.force_owner, "force_owner", "", "uid:gid pair to coerce ownership")
-	flagSet.StringVar(&args.trace, "trace", "", "Write execution trace to file")
-	flagSet.IntVar(&args.notifypid, "notifypid", 0, "Send USR1 to the specified process after "+
+	flag.BoolVar(&args.hh, "hh", false, "Show this long help text")
+	flag.BoolVar(&args.info, "info", false, "Display information about CIPHERDIR")
+	flag.BoolVar(&args.sharedstorage, "sharedstorage", false, "Make concurrent access to a shared CIPHERDIR safer")
+	flag.BoolVar(&args.devrandom, "devrandom", false, "Use /dev/random for generating master key")
+	flag.BoolVar(&args.fsck, "fsck", false, "Run a filesystem check on CIPHERDIR")
+	flag.StringVar(&args.masterkey, "masterkey", "", "Mount with explicit master key")
+	flag.StringVar(&args.cpuprofile, "cpuprofile", "", "Write cpu profile to specified file")
+	flag.StringVar(&args.memprofile, "memprofile", "", "Write memory profile to specified file")
+	flag.StringVar(&args.config, "config", "", "Use specified config file instead of CIPHERDIR/gocryptfs.conf")
+	flag.StringVar(&args.extpass, "extpass", "", "Use external program for the password prompt")
+	flag.StringVar(&args.passfile, "passfile", "", "Read password from file")
+	flag.StringVar(&args.ko, "ko", "", "Pass additional options directly to the kernel, comma-separated list")
+	flag.StringVar(&args.ctlsock, "ctlsock", "", "Create control socket at specified path")
+	flag.StringVar(&args.fsname, "fsname", "", "Override the filesystem name")
+	flag.StringVar(&args.force_owner, "force_owner", "", "uid:gid pair to coerce ownership")
+	flag.StringVar(&args.trace, "trace", "", "Write execution trace to file")
+	flag.IntVar(&args.notifypid, "notifypid", 0, "Send USR1 to the specified process after "+
 		"successful mount - used internally for daemonization")
-	flagSet.IntVar(&args.scryptn, "scryptn", configfile.ScryptDefaultLogN, "scrypt cost parameter logN. Possible values: 10-28. "+
+	flag.IntVar(&args.scryptn, "scryptn", configfile.ScryptDefaultLogN, "scrypt cost parameter logN. Possible values: 10-28. "+
 		"A lower value speeds up mounting and reduces its memory needs, but makes the password susceptible to brute-force attacks")
 	// Ignored otions
 	var dummyBool bool
 	ignoreText := "(ignored for compatibility)"
-	flagSet.BoolVar(&dummyBool, "rw", false, ignoreText)
-	flagSet.BoolVar(&dummyBool, "nosuid", false, ignoreText)
-	flagSet.BoolVar(&dummyBool, "nodev", false, ignoreText)
+	flag.BoolVar(&dummyBool, "rw", false, ignoreText)
+	flag.BoolVar(&dummyBool, "nosuid", false, ignoreText)
+	flag.BoolVar(&dummyBool, "nodev", false, ignoreText)
 	var dummyString string
-	flagSet.StringVar(&dummyString, "o", "", "For compatibility with mount(1), options can be also passed as a comma-separated list to -o on the end.")
+	flag.StringVar(&dummyString, "o", "", "For compatibility with mount(1), options can be also passed as a comma-separated list to -o on the end.")
 	// Actual parsing
-	err = flagSet.Parse(os.Args[1:])
+	err = flag.CommandLine.Parse(os.Args[1:])
 	if err == flag.ErrHelp {
 		os.Exit(0)
 	}
@@ -211,7 +215,6 @@ func parseCliOpts() (args argContainer) {
 		tlog.Fatal.Printf("The options -extpass and -masterkey cannot be used at the same time")
 		os.Exit(exitcodes.Usage)
 	}
-	return args
 }
 
 // prettyArgs pretty-prints the command-line arguments.

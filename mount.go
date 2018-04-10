@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"log/syslog"
@@ -37,7 +38,7 @@ import (
 func doMount(args *argContainer) {
 	// Check mountpoint
 	var err error
-	args.mountpoint, err = filepath.Abs(flagSet.Arg(1))
+	args.mountpoint, err = filepath.Abs(flag.Arg(1))
 	if err != nil {
 		tlog.Fatal.Printf("Invalid mountpoint: %v", err)
 		os.Exit(exitcodes.MountPoint)

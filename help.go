@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/rfjakob/gocryptfs/internal/tlog"
@@ -49,6 +50,6 @@ func helpLong() {
 	fmt.Printf("\n")
 	fmt.Printf(tUsage)
 	fmt.Printf("\nOptions:\n")
-	flagSet.PrintDefaults()
+	flag.PrintDefaults()
 	fmt.Printf("  --\n    	Stop option parsing\n")
 }
