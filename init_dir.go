@@ -70,7 +70,7 @@ func initDir(args *argContainer) {
 	}
 	{
 		var password []byte
-		if args.trezorkey {
+		if args.trezor {
 			// Get binary data from from Trezor
 			password = readpassword.Trezor()
 		} else {
@@ -80,7 +80,7 @@ func initDir(args *argContainer) {
 		}
 		creator := tlog.ProgramName + " " + GitVersion
 		err = configfile.CreateConfFile(args.config, password, args.plaintextnames,
-			args.scryptn, creator, args.aessiv, args.devrandom, args.trezorkey)
+			args.scryptn, creator, args.aessiv, args.devrandom, args.trezor)
 		if err != nil {
 			tlog.Fatal.Println(err)
 			os.Exit(exitcodes.WriteConf)

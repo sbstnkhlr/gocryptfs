@@ -47,7 +47,7 @@ func loadConfig(args *argContainer) (masterkey []byte, confFile *configfile.Conf
 		return masterkey, cf1, nil
 	}
 	var pw []byte
-	if cf1.IsFeatureFlagSet(configfile.FlagTrezorKey) {
+	if cf1.IsFeatureFlagSet(configfile.FlagTrezor) {
 		// Get binary data from from Trezor
 		pw = readpassword.Trezor()
 	} else {
