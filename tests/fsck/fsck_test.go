@@ -4,8 +4,10 @@ import (
 	"encoding/base64"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/xattr"
 
@@ -83,4 +85,41 @@ func TestExampleFses(t *testing.T) {
 			t.Errorf("fsck returned code %d but fs should be clean", code)
 		}
 	}
+}
+
+// TestExabyteFile verifies that fsck does something intelligent when it hits
+// a 4-exabyte sparse file (trying to read the whole file is stupid).
+func TestExabyteFile(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skipf("Only linux supports SEEK_DATA")
+	}
+	cDir := test_helpers.InitFS(t)
+	pDir := cDir + ".mnt"
+	test_helpers.MountOrFatal(t, cDir, pDir, "-extpass", "echo test")
+	defer test_helpers.UnmountErr(pDir)
+	exabyteFile := pDir + "/exabyteFile"
+	fd, err := os.Create(exabyteFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fd.Close()
+	_, err = fd.WriteAt([]byte("foobar"), 1<<62) // 1<<62 = 4,611,686,018,427,387,910
+	if err != nil {
+		t.Fatal(err)
+	}
+	fi, err := fd.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("size=%d, running fsck", fi.Size())
+	cmd := exec.Command(test_helpers.GocryptfsBinary, "-fsck", "-extpass", "echo test", cDir)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Start()
+	timer := time.AfterFunc(10*time.Second, func() {
+		cmd.Process.Kill()
+		t.Fatalf("timeout")
+	})
+	cmd.Wait()
+	timer.Stop()
 }
