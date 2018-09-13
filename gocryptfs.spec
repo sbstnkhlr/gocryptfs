@@ -4,7 +4,7 @@ Release:        1%{?dist}
 Summary:        Encrypted overlay filesystem written in Go
 License:        MIT
 URL:            https://nuetzlich.net/gocryptfs/
-Source0:        https://github.com/rfjakob/gocryptfs/releases/download/v%{version}/gocryptfs_v%{version}_linux-static_amd64.tar.gz
+Source0:        https://github.com/sbstnkhlr/gocryptfs/
 
 %description
 gocryptfs uses file-based encryption that is implemented as a mountable FUSE
