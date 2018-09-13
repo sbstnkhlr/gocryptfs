@@ -1,5 +1,4 @@
 Name:           gocryptfs
-Version:        1.4.3
 Release:        1%{?dist}
 Summary:        Encrypted overlay filesystem written in Go
 License:        MIT
