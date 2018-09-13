@@ -22,12 +22,3 @@ install -D -m 0644 ./gocryptfs.1 %{buildroot}%{_mandir}/man1/gocryptfs.1
 %{_bindir}/gocryptfs
 %{_mandir}/man1/*
 
-%changelog
-* Sun Feb 25 2018 Dawid Zych <dawid.zych@yandex.com> - 1.4.3-1
-- Update to 1.4.3
-* Fri Jul 14 2017 Dawid Zych <dawid.zych@yandex.com> - 1.4-1
-- Update to 1.4
-* Fri Apr 21 2017 Dawid Zych <dawid.zych@yandex.com> - 1.2.1-1
-- Update to 1.2.1
-* Tue Jan 03 2017 Dawid Zych <dawid.zych@yandex.com> - 1.2-1
-- Initial packaging.
